@@ -43,32 +43,36 @@ def get_opposite_direction(direction):
 def bfs(traversal_graph,starting_room, target):
     q = Queue()
     visited = set()
-    q.enqueue([starting_room.id])
+    q.enqueue([starting_room])
 
     while q.size() > 0:
-        curr_room = starting_room
+        
         path = q.dequeue()
         v = path[-1]
+        # print(traversal_graph[v])
+        # print(path)
         if v not in visited:
             for direction in traversal_graph[v]:
-                if direction == '?':
+                if traversal_graph[v][direction] == target:
                     return path
             visited.add(v)
 
-            for next_rooom in curr_room.get_exits():
+            for direction in traversal_graph[v]:
                 new_path = list(path)
-                new_path.append(next_vertice)
+                new_path.append(traversal_graph[v][direction])
+                # print(check_room.id)
                 q.enqueue(new_path)
+            
 
     return None
 # Load world
 world = World()
 
 # You may uncomment the smaller graphs for development and testing purposes.
-map_file = "maps/test_line.txt"
+# map_file = "maps/test_line.txt"
 # map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
-# map_file = "maps/test_loop_fork.txt"
+map_file = "maps/test_loop_fork.txt"
 # map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
@@ -87,28 +91,58 @@ player.current_room = world.starting_room
 traversal_graph = {}
 came_from = ''
 prev_id = 0
-for x in range(len(room_graph)):
+bfs_path=[]
+while len(visited_rooms) != len(room_graph):
+# for x in range(len(room_graph)):
     if player.current_room not in visited_rooms:
         exits = player.current_room.get_exits()
         unexplored_direction = {}
         for direction in exits:
             unexplored_direction[direction] = '?'
         traversal_graph[player.current_room.id] = unexplored_direction
-        print(traversal_graph[player.current_room.id])
+        # print(traversal_graph[player.current_room.id])
         visited_rooms.add(player.current_room)
+    
     if len(visited_rooms) > 1:
         traversal_graph[player.current_room.id][came_from] = prev_id
     
     possible_direction = []    
+    
     for direction in traversal_graph[player.current_room.id]:
         if traversal_graph[player.current_room.id][direction] == '?':
             possible_direction.append(direction)
             # print(direction)
     if not possible_direction:
+        path = bfs(traversal_graph,player.current_room.id,'?')
+        if path == None:
+            break
+        else:
+            i = 0 
+            for i in range(len(path)-1):
+                # print(path_id)
+                for key in traversal_graph[path[i]]:
+                    if traversal_graph[path[i]][key] == path[i+1]:
+                        print(key)
+                        traversal_path.append(key)
+                        bfs_path.append(key)
+            for move in bfs_path:
+                # print(bfs_path)
+                player.travel(move)
+            if player.current_room not in visited_rooms:
+                exits = player.current_room.get_exits()
+                unexplored_direction = {}
+                for direction in exits:
+                    unexplored_direction[direction] = '?'
+                traversal_graph[player.current_room.id] = unexplored_direction
+                # print(traversal_graph[player.current_room.id])
+                visited_rooms.add(player.current_room)
+            for direction in traversal_graph[player.current_room.id]:
+                if traversal_graph[player.current_room.id][direction] == '?':
+                    possible_direction.append(direction)
+            print(player.current_room.id)
+            print(possible_direction)
+            
         
-        break
-    
-
     random.shuffle(possible_direction)
     rand_direction = possible_direction[0]
     prev_id = player.current_room.id
@@ -118,9 +152,17 @@ for x in range(len(room_graph)):
     came_from = get_opposite_direction(rand_direction)
     player.travel(rand_direction)
     traversal_path.append(rand_direction)
-    print(rand_direction)
+    # print(rand_direction)
     print(traversal_graph)
    
+
+if len(visited_rooms) == len(room_graph):
+    print(f"TESTS PASSED: {len(traversal_path)} moves, {len(visited_rooms)} rooms visited")
+else:
+    print("TESTS FAILED: INCOMPLETE TRAVERSAL")
+    print(f"{len(room_graph) - len(visited_rooms)} unvisited rooms")
+
+
 # invalid_rooms = direction - player.current_room.get_exits()
 # s = Stack()
 # s.push(player.current_room)
@@ -136,11 +178,10 @@ for x in range(len(room_graph)):
 #             s.push(next_room)
 #         player.travel(rand_direction)
 #         traversal_path.append(rand_direction)
-if len(visited_rooms) == len(room_graph):
-    print(f"TESTS PASSED: {len(traversal_path)} moves, {len(visited_rooms)} rooms visited")
-else:
-    print("TESTS FAILED: INCOMPLETE TRAVERSAL")
-    print(f"{len(room_graph) - len(visited_rooms)} unvisited rooms")
+
+
+
+
 # for move in traversal_path:
 #     player.travel(move)
 
